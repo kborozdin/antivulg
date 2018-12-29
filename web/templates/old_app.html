@@ -1,0 +1,16 @@
+<!doctype html>
+<title>Talk dirty to me (old version)</title>
+<div>
+<form action="/old" method="POST">
+    <label for="query">Enter text to check:</label><br>
+    <textarea name="query" rows="10" cols="50">{{ query }}</textarea><br>
+    <button type="submit">Check!</button>
+</form>
+</div>
+{% if response %}
+<div>
+    <br><br>
+    <label for="response">Result:</label><br>
+    <div name="response" style="width: 40%; float: left; border: solid 1px black; padding: 5px;">{{ response | safe }}</div>
+</div>
+{% endif %}

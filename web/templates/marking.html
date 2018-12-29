@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Marking</title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+    <!-- highlight-within-textarea CSS/JS -->
+    <link href="static/css/jquery.highlight-within-textarea.css" rel="stylesheet">
+    <script src="static/js/jquery.highlight-within-textarea.js"></script>
+
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+</head>
+<body style="padding-left: 5px; padding-top: 5px;">
+<div class="row">
+    <div class="col-md-12">
+        <div style="margin-left:auto; margin-right:auto; display:table;">
+            <div style="width: 500px">
+                <p>Общие правила:</p>
+                <ul>
+                    <li>Размечаются все некультурные слова, которые не следует употреблять в нормальной речи (допустим, при разговоре с незнакомым человеком-ровесником). Например: дебил, жопа, мразь и т.д.</li>
+                    <li>При разметке нужно ориентироваться на контекст (сучки как оскорбление или же как часть дерева).
+                    <li>Выделяется всё слово полностью</li>
+                    <li>Некультурные слова, содержащие пробелы (х у й), также выделяются полностью</li>
+                    <li>Слова не на русском языке не размечаются</li>
+                    <li>Слова с опечатками (пезда) и цензурой (п*зда) размечаются</li>
+                    <li>В сложных словах выделяется нецензурная часть, e.g. сете|пидор|. Но если слово нецензурно только в комплексе ("членосос"), тогда оно выделяется целиком.</li>
+                </ul>
+            </div>
+            <h4>Let's mark it!
+            </h4>
+            <textarea style="border: solid 1px black; width: 500px; height: 200px; text-shadow: 0px 0px 0px black; color: transparent; resize: none;" id="text-element" readonly></textarea>
+            <br>
+            <input type="button" id="mark" value="Mark selection" class="btn btn-primary"/>
+            <input type="button" id="undo" value="Unmark selection" class="btn btn-primary"/>
+            <input type="button" id="done" value="Done!" class="btn btn-success"/>
+        </div>
+    </div>
+</div>
+</body>
+<script type=text/javascript>
+    var textElement;
+    var resultArr;
+    var text;
+
+    function updateTextarea() {
+        $('#text-element').highlightWithinTextarea('destroy');
+        var toHighlightArr = [];
+        for (var i = 0; i < resultArr.length; ++i) {
+            if (resultArr[i] == 1) {
+                var rangeStart = i;
+                while (resultArr[i] == 1 && i < resultArr.length) {
+                    ++i;
+                }
+                toHighlightArr.push([rangeStart, i]);
+            }
+        }
+        $('#text-element').highlightWithinTextarea({
+            highlight: [{
+                highlight: toHighlightArr,
+                className: 'red'
+            }]
+        });
+    }
+
+    document.getElementById("mark").addEventListener("click", function(){
+        var startPosition = textElement.selectionStart;
+        var endPosition = textElement.selectionEnd;
+
+        if (startPosition != endPosition) {
+            for (var i = startPosition; i < endPosition; ++i) {
+                resultArr[i] = 1;
+            }
+            updateTextarea();
+        }
+    }, false);
+
+    document.getElementById("undo").addEventListener("click", function(){
+        var startPosition = textElement.selectionStart;
+        var endPosition = textElement.selectionEnd;
+
+        if (startPosition != endPosition) {
+            for (var i = startPosition; i < endPosition; ++i) {
+                resultArr[i] = 0;
+            }
+            updateTextarea();
+        }
+    }, false);
+
+    document.getElementById("done").addEventListener("click", function(){
+        $.ajax({
+            url: "/marking",
+            type: "POST",
+            data: JSON.stringify({resultArr: resultArr, text: text}),
+            contentType: 'application/json;charset=UTF-8',
+            success: function(response){
+                if (response.text) {
+                    text = response.text;
+                    $('#text-element').html(response.text);
+                    resultArr = new Array(textElement.value.length+1).join('0').split('').map(parseFloat);
+                }
+                else {
+                    window.location.href = response.redirect;
+                }
+            }
+        });
+        $('#text-element').highlightWithinTextarea('destroy');
+        $('#text-element').highlightWithinTextarea({
+            highlight: [{
+                highlight: [],
+                className: 'red'
+            }]
+        });
+    }, false);
+
+    $(function(){
+        textElement = document.getElementById('text-element');
+        $.ajax({
+            url: "/marking",
+            type: "GET",
+            success: function(response){
+                if (response.text) {
+                    text = response.text;
+                    $('#text-element').html(response.text);
+                    resultArr = new Array(textElement.value.length+1).join('0').split('').map(parseFloat);
+                }
+                else {
+                    window.location.href = response.redirect;
+                }
+            }
+        });
+        $('#text-element').highlightWithinTextarea({
+            highlight: [{
+                highlight: [],
+                className: 'red'
+            }]
+        });
+    });
+</script>
+</html>
