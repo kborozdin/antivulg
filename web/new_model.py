@@ -84,9 +84,9 @@ def mark_text(graph, model, text):
     cls = (pred >= THRESHOLD).astype(np.int)
     for occ in re.finditer(r'\w+', text):
         left, right = occ.span()
-		if occ.group() in proper_names:
-			cls[left:right] = 0
-			continue
+        if occ.group() in proper_names:
+            cls[left:right] = 0
+            continue
         if is_approx_vulg(cls[left:right]):
             cls[left:right] = 1
         else:
