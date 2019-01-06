@@ -2,6 +2,7 @@ import re
 import numpy as np
 import tensorflow as tf
 import string
+import pandas as pd
 
 
 punct_marks = tuple('.,!?;"\'')
@@ -14,6 +15,8 @@ alphabet = real_alphabet + tuple(['NULL', 'DIG', 'ENG'])
 alpha2idx = {c: idx for idx, c in enumerate(alphabet)}
 null_idx = alpha2idx['NULL']
 
+proper_names = pd.read_csv('../data/proper_names.csv', encoding='utf-8', header=None)
+proper_names = set(proper_names[0].unique())
 
 reduction = {c: c for c in alphabet}
 for lst in punct_marks, english, digits:
@@ -81,6 +84,9 @@ def mark_text(graph, model, text):
     cls = (pred >= THRESHOLD).astype(np.int)
     for occ in re.finditer(r'\w+', text):
         left, right = occ.span()
+		if occ.group() in proper_names:
+			cls[left:right] = 0
+			continue
         if is_approx_vulg(cls[left:right]):
             cls[left:right] = 1
         else:
